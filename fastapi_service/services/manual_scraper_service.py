@@ -10,6 +10,7 @@ from models.job_skill import JobSkill
 
 
 ARBEITNOW_URL = "https://www.arbeitnow.com/api/job-board-api"
+REMOTIVE_URL = "https://remotive.com/api/remote-jobs"
 
 
 SKILL_ALIASES = {
@@ -175,8 +176,6 @@ def clean_text(value: Optional[str], default: str = "") -> str:
         return default
 
     value = str(value)
-
-    # Remove HTML tags from descriptions returned by external APIs.
     value = re.sub(r"<[^>]+>", " ", value)
     value = re.sub(r"\s+", " ", value)
 
@@ -382,8 +381,98 @@ def link_job_skill(
     return True
 
 
+def create_job_with_skills(
+    db: Session,
+    *,
+    title: str,
+    company_name: str,
+    location: str,
+    description: str,
+    source: str,
+    source_url: str,
+    job_type: Optional[str] = None,
+    experience_level: Optional[str] = None,
+    salary_min: Optional[int] = None,
+    salary_max: Optional[int] = None,
+    currency: str = "USD",
+) -> Dict:
+    if not title or not source_url:
+        return {
+            "inserted": False,
+            "skipped": True,
+            "skills_linked": 0,
+        }
+
+    existing_job = (
+        db.query(Job)
+        .filter(Job.source_url == source_url)
+        .first()
+    )
+
+    if existing_job:
+        return {
+            "inserted": False,
+            "skipped": True,
+            "skills_linked": 0,
+        }
+
+    company = get_or_create_company(
+        db=db,
+        name=company_name,
+    )
+
+    job = Job(
+        title=title,
+        company_id=company.id,
+        location=location,
+        description=description,
+        source=source,
+        source_url=source_url,
+        job_type=job_type or infer_job_type(title),
+        experience_level=experience_level or infer_experience(title),
+        salary_min=salary_min,
+        salary_max=salary_max,
+        currency=currency,
+        is_active=True,
+    )
+
+    db.add(job)
+    db.flush()
+
+    skills_linked = 0
+    extracted_skills = extract_skills(f"{title} {description}")
+
+    for skill_name in extracted_skills:
+        skill = get_or_create_skill(
+            db=db,
+            skill_name=skill_name,
+        )
+
+        created_link = link_job_skill(
+            db=db,
+            job_id=job.id,
+            skill_id=skill.id,
+        )
+
+        if created_link:
+            skills_linked += 1
+
+    return {
+        "inserted": True,
+        "skipped": False,
+        "skills_linked": skills_linked,
+    }
+
+
 def fetch_arbeitnow_jobs(limit: int = 50) -> List[Dict]:
-    response = requests.get(ARBEITNOW_URL, timeout=20)
+    response = requests.get(
+        ARBEITNOW_URL,
+        timeout=20,
+        headers={
+            "User-Agent": "JobIntel/1.0",
+            "Accept": "application/json",
+        },
+    )
     response.raise_for_status()
 
     data = response.json()
@@ -406,67 +495,28 @@ def scrape_arbeitnow_once(
     for item in jobs:
         jobs_seen += 1
 
-        title = clean_text(item.get("title"))
-        company_name = clean_text(item.get("company_name"), "Unknown")
-        location = clean_text(item.get("location"), "Remote")
-        description = clean_text(item.get("description"))
-        source_url = clean_text(item.get("url"))
-
-        if not title or not source_url:
-            jobs_skipped += 1
-            continue
-
-        existing_job = (
-            db.query(Job)
-            .filter(Job.source_url == source_url)
-            .first()
-        )
-
-        if existing_job:
-            jobs_skipped += 1
-            continue
-
-        company = get_or_create_company(
+        result = create_job_with_skills(
             db=db,
-            name=company_name,
-        )
-
-        job = Job(
-            title=title,
-            company_id=company.id,
-            location=location,
-            description=description,
+            title=clean_text(item.get("title")),
+            company_name=clean_text(item.get("company_name"), "Unknown"),
+            location=clean_text(item.get("location"), "Remote"),
+            description=clean_text(item.get("description")),
             source="arbeitnow",
-            source_url=source_url,
-            job_type=infer_job_type(title),
-            experience_level=infer_experience(title),
+            source_url=clean_text(item.get("url")),
+            job_type=None,
+            experience_level=None,
             salary_min=None,
             salary_max=None,
             currency="USD",
-            is_active=True,
         )
 
-        db.add(job)
-        db.flush()
+        if result["inserted"]:
+            jobs_inserted += 1
 
-        jobs_inserted += 1
+        if result["skipped"]:
+            jobs_skipped += 1
 
-        extracted_skills = extract_skills(f"{title} {description}")
-
-        for skill_name in extracted_skills:
-            skill = get_or_create_skill(
-                db=db,
-                skill_name=skill_name,
-            )
-
-            created_link = link_job_skill(
-                db=db,
-                job_id=job.id,
-                skill_id=skill.id,
-            )
-
-            if created_link:
-                skills_linked += 1
+        skills_linked += result["skills_linked"]
 
     db.commit()
 
@@ -480,15 +530,128 @@ def scrape_arbeitnow_once(
     }
 
 
-def manual_scrape_once(
+def fetch_remotive_jobs(limit: int = 50) -> List[Dict]:
+    response = requests.get(
+        REMOTIVE_URL,
+        timeout=20,
+        headers={
+            "User-Agent": "JobIntel/1.0",
+            "Accept": "application/json",
+        },
+    )
+    response.raise_for_status()
+
+    data = response.json()
+    jobs = data.get("jobs", [])
+
+    return jobs[:limit]
+
+
+def parse_salary(value) -> tuple[Optional[int], Optional[int], str]:
+    if not value:
+        return None, None, "USD"
+
+    text = str(value)
+    currency = "USD"
+
+    if "€" in text or "eur" in text.lower():
+        currency = "EUR"
+    elif "£" in text or "gbp" in text.lower():
+        currency = "GBP"
+    elif "$" in text or "usd" in text.lower():
+        currency = "USD"
+
+    numbers = [
+        int(num.replace(",", ""))
+        for num in re.findall(r"\d[\d,]*", text)
+    ]
+
+    if len(numbers) >= 2:
+        return numbers[0], numbers[1], currency
+
+    if len(numbers) == 1:
+        return numbers[0], None, currency
+
+    return None, None, currency
+
+
+def scrape_remotive_once(
     db: Session,
-    source: str = "arbeitnow",
     limit: int = 50,
 ) -> Dict:
-    if source != "arbeitnow":
-        raise ValueError("Only 'arbeitnow' is supported for manual scrape right now.")
+    jobs = fetch_remotive_jobs(limit=limit)
 
-    return scrape_arbeitnow_once(
-        db=db,
-        limit=limit,
-    )
+    jobs_seen = 0
+    jobs_inserted = 0
+    jobs_skipped = 0
+    skills_linked = 0
+
+    for item in jobs:
+        jobs_seen += 1
+
+        salary_min, salary_max, currency = parse_salary(item.get("salary"))
+
+        title = clean_text(item.get("title"))
+        company_name = clean_text(item.get("company_name"), "Unknown")
+        location = clean_text(
+            item.get("candidate_required_location"),
+            "Remote",
+        )
+        description = clean_text(item.get("description"))
+        source_url = clean_text(item.get("url"))
+
+        result = create_job_with_skills(
+            db=db,
+            title=title,
+            company_name=company_name,
+            location=location,
+            description=description,
+            source="remotive",
+            source_url=source_url,
+            job_type="full-time",
+            experience_level=infer_experience(title),
+            salary_min=salary_min,
+            salary_max=salary_max,
+            currency=currency,
+        )
+
+        if result["inserted"]:
+            jobs_inserted += 1
+
+        if result["skipped"]:
+            jobs_skipped += 1
+
+        skills_linked += result["skills_linked"]
+
+    db.commit()
+
+    return {
+        "message": "Manual scrape completed",
+        "source": "remotive",
+        "jobs_seen": jobs_seen,
+        "jobs_inserted": jobs_inserted,
+        "jobs_skipped": jobs_skipped,
+        "skills_linked": skills_linked,
+    }
+
+
+def manual_scrape_once(
+    db: Session,
+    source: str = "remotive",
+    limit: int = 50,
+) -> Dict:
+    source = source.lower().strip()
+
+    if source == "remotive":
+        return scrape_remotive_once(
+            db=db,
+            limit=limit,
+        )
+
+    if source == "arbeitnow":
+        return scrape_arbeitnow_once(
+            db=db,
+            limit=limit,
+        )
+
+    raise ValueError("Supported manual scrape sources: 'remotive', 'arbeitnow'.")
