@@ -2,6 +2,8 @@
 
 > A full-stack job intelligence platform that scrapes jobs, extracts skills, analyzes market demand, recommends relevant roles, and tracks job applications through a production-style workflow.
 
+[Live Demo](https://jobintel-frontend.onrender.com) · [Backend API](https://job-intelligence-platform-cnbf.onrender.com) · [Swagger Docs](https://job-intelligence-platform-cnbf.onrender.com/docs)
+
 JobIntel is a full-stack career intelligence application built with **FastAPI, React, PostgreSQL, Redis, Celery, Docker, and Tailwind CSS**.
 
 The platform collects job listings from multiple sources, processes them through background workers, extracts technical skills, stores structured data in PostgreSQL, and provides a modern frontend for job search, analytics, personalized recommendations, resume analysis, skill gap analysis, and application tracking.
@@ -23,6 +25,17 @@ They may know which roles they want, but not:
 JobIntel solves this by turning raw scraped job listings into a searchable, personalized, and analytics-driven job intelligence workflow.
 
 The project was built to demonstrate full-stack engineering, backend architecture, asynchronous processing, database design, frontend product thinking, testing, deployment preparation, and real-world career-tech use cases.
+
+---
+
+## Live Links
+
+- **Frontend:** https://jobintel-frontend.onrender.com
+- **Backend API:** https://job-intelligence-platform-cnbf.onrender.com
+- **Swagger API Docs:** https://job-intelligence-platform-cnbf.onrender.com/docs
+- **Health Check:** https://job-intelligence-platform-cnbf.onrender.com/health
+
+> Depending on the hosting plan, the backend may take a short time to wake up after inactivity.
 
 ---
 
@@ -234,6 +247,8 @@ JobIntel includes an admin-only manual scrape endpoint.
 
 This allows the project owner to refresh job data on demand without running scraper containers, Redis, or Celery workers continuously in the deployed demo.
 
+The manual refresh flow supports **Remotive** as the preferred hosted source and keeps **Arbeitnow** available as a secondary/local source.
+
 ---
 
 ## Architecture
@@ -284,19 +299,19 @@ React Frontend
 ### Lightweight Deployment Architecture
 
 ```txt
-External Job Source
+Remotive API / Seeded Job Data
         |
         v
 Admin-Only Manual Scrape Endpoint
         |
         v
-Hosted PostgreSQL Database
+Neon PostgreSQL
         |
         v
-FastAPI Backend
+Render FastAPI Backend
         |
         v
-React Frontend
+Render Static Frontend
 ```
 
 ---
@@ -310,7 +325,7 @@ React Frontend
 5. PostgreSQL stores users, profiles, jobs, companies, skills, saved jobs, and job-skill relationships.
 6. FastAPI exposes APIs for jobs, analytics, authentication, profiles, recommendations, saved jobs, career tools, and admin-only manual refresh.
 7. React displays the user-facing product with dashboards, search, recommendations, tracker workflows, and analysis tools.
-8. In the deployed demo, continuous scraper/worker services can be replaced with seeded data and manual admin-triggered refreshes.
+8. In the deployed demo, continuous scraper/worker services are replaced with seeded data and manual admin-triggered refreshes.
 
 ---
 
@@ -359,9 +374,9 @@ React Frontend
 
 - Docker
 - Docker Compose
+- Render
+- Neon PostgreSQL
 - Environment-based configuration
-- Render-ready backend configuration
-- Neon PostgreSQL-ready database configuration
 
 ---
 
@@ -412,7 +427,7 @@ React Frontend
   Builds dashboard data, market skill insights, resume analysis, and skill gap results.
 
 - `fastapi_service/services/manual_scraper_service.py`  
-  Handles direct admin-triggered job scraping, deduplication, company creation, job insertion, skill extraction, and job-skill linking without requiring Celery or Redis.
+  Handles direct admin-triggered job scraping, deduplication, company creation, job insertion, skill extraction, and job-skill linking without requiring Celery or Redis. Supports Remotive and Arbeitnow.
 
 - `fastapi_service/models/`  
   Contains SQLAlchemy models for users, profiles, jobs, companies, skills, saved jobs, and cleanup logs.
@@ -581,11 +596,9 @@ Make sure you have installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/job-intelligence-platform.git
+git clone https://github.com/Dno-J/job-intelligence-platform.git
 cd job-intelligence-platform
 ```
-
-Replace the clone URL with the actual GitHub repository URL after publishing.
 
 ---
 
@@ -715,16 +728,16 @@ VITE_API_URL=http://localhost:8001
 
 ### Production Environment Variables
 
-For production, update these values:
+For production, update these values in the hosting dashboard:
 
 ```env
 DATABASE_URL=your-production-postgres-url
 SECRET_KEY=your-long-random-production-secret
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
-CORS_ORIGINS=https://your-frontend-domain.com
+CORS_ORIGINS=https://jobintel-frontend.onrender.com
 ADMIN_SECRET_KEY=your-long-random-admin-secret
-VITE_API_URL=https://your-backend-domain.com
+VITE_API_URL=https://job-intelligence-platform-cnbf.onrender.com
 ```
 
 Do not commit real `.env` files.
@@ -910,6 +923,12 @@ FastAPI automatically provides Swagger documentation at:
 http://localhost:8001/docs
 ```
 
+Production Swagger documentation is available at:
+
+```txt
+https://job-intelligence-platform-cnbf.onrender.com/docs
+```
+
 ### Auth
 
 ```txt
@@ -976,10 +995,11 @@ GET /health
 
 The deployed demo is designed to run as a lightweight production-style setup:
 
-- Frontend hosted as a static site
-- FastAPI backend hosted as a web service
-- PostgreSQL hosted on a managed database provider
+- Frontend hosted as a static site on Render
+- FastAPI backend hosted as a Render web service
+- PostgreSQL hosted on Neon
 - Continuous scraper/worker services kept outside the always-on deployment
+- Manual admin refresh available for controlled job updates
 
 This keeps the public demo stable and cost-efficient while preserving the full local development architecture with Redis, Celery, and scraper services.
 
@@ -1006,7 +1026,7 @@ DATABASE_URL=your-production-postgres-url
 SECRET_KEY=your-production-secret-key
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
-CORS_ORIGINS=https://your-frontend-url.com
+CORS_ORIGINS=https://jobintel-frontend.onrender.com
 ADMIN_SECRET_KEY=your-production-admin-secret
 ```
 
@@ -1017,7 +1037,7 @@ ADMIN_SECRET_KEY=your-production-admin-secret
 Set:
 
 ```env
-VITE_API_URL=https://your-backend-url.com
+VITE_API_URL=https://job-intelligence-platform-cnbf.onrender.com
 ```
 
 Build command:
@@ -1036,15 +1056,9 @@ dist
 
 ### Database Deployment
 
-A managed PostgreSQL database is recommended for the hosted deployment.
+Neon PostgreSQL is used for the hosted database.
 
-After creating the production database:
-
-1. Copy the database connection string.
-2. Set it as `DATABASE_URL` in the backend hosting environment.
-3. Make sure SSL is supported by the connection string if required by the provider.
-4. Start the backend once so SQLAlchemy can create tables.
-5. Seed or manually refresh enough job data for the public demo.
+For the production demo, local PostgreSQL job data was exported and imported into Neon so the deployed app has live dashboard, job search, skill analytics, and recommendation data without requiring always-running scraper containers.
 
 ---
 
@@ -1054,10 +1068,10 @@ The project includes Celery workers, Celery Beat, Redis, and scraper services fo
 
 For the lightweight deployed demo, these services are not required to run continuously.
 
-The initial deployment approach is:
+The current deployment approach is:
 
 - deploy the backend and frontend,
-- use a managed PostgreSQL database,
+- use Neon PostgreSQL as the managed database,
 - seed jobs before demo,
 - refresh jobs manually through an admin-only endpoint,
 - deploy worker/scraper services later if continuous updates are needed.
@@ -1087,17 +1101,24 @@ The endpoint is protected using the `X-Admin-Secret` header.
 Example:
 
 ```bash
-curl -X POST "https://your-backend-url.com/admin/scrape-once?source=arbeitnow&limit=50" \
+curl -X POST "https://job-intelligence-platform-cnbf.onrender.com/admin/scrape-once?source=remotive&limit=50" \
   -H "X-Admin-Secret: your-admin-secret"
 ```
 
-Currently, the deployment-safe manual scrape endpoint supports:
+Supported manual scrape sources:
 
 ```txt
+source=remotive
 source=arbeitnow
 ```
 
-This allows the project owner to refresh jobs manually without keeping background scrapers running continuously.
+Recommended production source:
+
+```txt
+source=remotive
+```
+
+Remotive is preferred for hosted manual refresh because it works reliably from the deployed backend environment. Arbeitnow remains available as a secondary source but may block some hosted server requests.
 
 This design keeps the deployment lightweight while preserving the ability to refresh job data when needed.
 
@@ -1112,7 +1133,7 @@ This design keeps the deployment lightweight while preserving the ability to ref
 - Frontend automated tests are not yet implemented.
 - Resume analysis depends on PDF text extraction quality.
 - Continuous worker/scraper deployment requires additional hosted services.
-- The manual deployment-safe scrape endpoint currently supports Arbeitnow only.
+- The manual refresh endpoint currently supports Remotive and Arbeitnow only.
 - The app is designed for learning, portfolio, and demo purposes, not as a commercial job platform yet.
 
 ---
@@ -1165,9 +1186,10 @@ It includes:
 - Docker-based local development
 - automated backend API tests
 - admin-only manual job refresh for lightweight deployment
+- hosted deployment with Render and Neon
 - and production-minded environment configuration
 
-This project shows the ability to build, connect, debug, test, polish, and explain a realistic multi-service application.
+This project shows the ability to build, connect, debug, test, polish, deploy, and explain a realistic multi-service application.
 
 ---
 
