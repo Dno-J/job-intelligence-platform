@@ -65,6 +65,8 @@ worker_service/celerybeat-schedule
 *.sql.gz
 *.backup
 postgres_data/
+jobintel_dump.sql
+jobintel_dump_clean.sql
 
 
 # LOCAL EXPORTS / TEMP FILES
