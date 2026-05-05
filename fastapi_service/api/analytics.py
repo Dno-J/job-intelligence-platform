@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Query, UploadFile, File
+import os
+
 import psycopg2
+from fastapi import APIRouter, File, Query, UploadFile
 
 from services.analytics_service import (
-    get_dashboard_data,
-    get_market_skills,
+    analyze_resume_text,
     calculate_skill_gap,
     extract_text_from_pdf,
-    analyze_resume_text,
+    get_dashboard_data,
+    get_market_skills,
 )
 
 
@@ -14,13 +16,21 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
 def get_db_connection():
-    return psycopg2.connect(
-        dbname="jobs_db",
-        user="postgres",
-        password="postgres",
-        host="postgres",
-        port=5432,
+    """
+    Create a raw psycopg2 database connection for analytics queries.
+
+    Local Docker fallback:
+        postgresql://postgres:postgres@postgres:5432/jobs_db
+
+    Production:
+        Uses DATABASE_URL from Render/Neon.
+    """
+    database_url = os.getenv(
+        "DATABASE_URL",
+        "postgresql://postgres:postgres@postgres:5432/jobs_db",
     )
+
+    return psycopg2.connect(database_url)
 
 
 @router.get("/dashboard")
