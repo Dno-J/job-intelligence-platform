@@ -1,0 +1,86 @@
+# ENV FILES / SECRETS
+.env
+.env.*
+!.env.example
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+fastapi_service/.env
+fastapi_service/.env.*
+!fastapi_service/.env.example
+
+worker_service/.env
+worker_service/.env.*
+!worker_service/.env.example
+
+scraper_service/.env
+scraper_service/.env.*
+!scraper_service/.env.example
+
+
+# PYTHON
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+
+# NODE / FRONTEND
+node_modules/
+dist/
+build/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# DOCKER / CELERY
+celerybeat-schedule
+worker_service/celerybeat-schedule
+*.pid
+
+
+# DATABASE / LOCAL FILES
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+*.backup
+postgres_data/
+
+
+# LOCAL EXPORTS / TEMP FILES
+tmp/
+temp/
+exports/
+local_dumps/
+
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+
+# LOGS
+*.log
+logs/

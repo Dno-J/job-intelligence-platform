@@ -1,0 +1,5 @@
+requests
+beautifulsoup4
+redis
+celery
+psycopg2-binary

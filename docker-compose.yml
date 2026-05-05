@@ -1,0 +1,120 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: job_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-jobs_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis:
+    image: redis:7
+    container_name: job_redis
+    restart: always
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  fastapi:
+    build: ./fastapi_service
+    container_name: job_fastapi
+    restart: always
+    command: sh -c "python wait_for_db.py && uvicorn main:app --host 0.0.0.0 --port 8001 --reload"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/jobs_db}
+      SECRET_KEY: ${SECRET_KEY:-dev-supersecretkey-change-in-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      ADMIN_SECRET_KEY: ${ADMIN_SECRET_KEY:-change-this-admin-secret-before-production}
+    volumes:
+      - ./fastapi_service:/app
+    ports:
+      - "${FASTAPI_PORT:-8001}:8001"
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    build: ./worker_service
+    container_name: job_worker
+    restart: always
+    command: sh -c "python wait_for_db.py && celery -A celery_app worker --loglevel=info -Q celery"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/jobs_db}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    volumes:
+      - ./worker_service:/app
+    depends_on:
+      - redis
+      - postgres
+
+  celery_beat:
+    build: ./worker_service
+    container_name: job_celery_beat
+    restart: always
+    command: sh -c "python wait_for_db.py && celery -A celery_app beat --loglevel=info"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/jobs_db}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    volumes:
+      - ./worker_service:/app
+    depends_on:
+      - redis
+      - postgres
+
+  scraper:
+    build: ./scraper_service
+    container_name: job_scraper
+    restart: always
+    command: sh -c "sleep 5 && python -u remoteok_scraper.py"
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    volumes:
+      - ./scraper_service:/app
+    depends_on:
+      - redis
+
+  internshala_scraper:
+    build: ./scraper_service
+    container_name: job_internshala_scraper
+    restart: always
+    command: sh -c "sleep 10 && python -u internshala_scraper.py"
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    volumes:
+      - ./scraper_service:/app
+    depends_on:
+      - redis
+
+  remotive_scraper:
+    build: ./scraper_service
+    container_name: job_remotive_scraper
+    restart: always
+    command: sh -c "sleep 10 && python -u remotive_scraper.py"
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    volumes:
+      - ./scraper_service:/app
+    depends_on:
+      - redis
+
+  arbeitnow_scraper:
+    build: ./scraper_service
+    container_name: job_arbeitnow_scraper
+    restart: always
+    command: sh -c "sleep 10 && python -u arbeitnow_scraper.py"
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    volumes:
+      - ./scraper_service:/app
+    depends_on:
+      - redis
+
+volumes:
+  postgres_data:
