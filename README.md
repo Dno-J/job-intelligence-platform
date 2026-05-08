@@ -61,7 +61,7 @@ The project was built to demonstrate full-stack engineering, backend architectur
 - [Why This Project Matters](#why-this-project-matters)
 - [Development Note](#development-note)
 - [Author](#author)
-
+- [License](#License)
 ---
 
 ## Project Overview
@@ -1208,3 +1208,7 @@ Built by **Dino Jackson**.
 - GitHub: [https://github.com/Dno-J](https://github.com/Dno-J)
 - LinkedIn: [https://www.linkedin.com/in/dino-jackson-486840368/](https://www.linkedin.com/in/dino-jackson-486840368/)
 - Portfolio: [https://portfolio-frontend-wy8a.onrender.com/](https://portfolio-frontend-wy8a.onrender.com/)
+
+## License
+
+This project is licensed under the MIT License.
