@@ -253,7 +253,7 @@ The manual refresh flow supports:
 - Remotive
 - RemoteOK
 - Arbeitnow
-- All sources together
+- All-source refresh
 
 Existing jobs are refreshed using `source_url` instead of being duplicated. This updates `scraped_at`, keeps jobs active, and helps recent dashboard ranges stay populated.
 
@@ -1097,13 +1097,6 @@ The frontend includes loading states so the app remains usable while the backend
 
 ---
 
-Yes, update README before pushing.
-
-Only update the **Manual Job Refresh**, **Limitations**, and maybe **Future Improvements** sections. Your README already has the right structure, so keep the change small. Current README already mentions manual refresh, but it still says `source=all` is recommended. Now we should change that to **Remotive recommended** and mark others as experimental. 
-
-## 1. Replace your `Manual Job Refresh` section with this
-
-````md
 ## Manual Job Refresh
 
 The deployed demo does not need continuously running scraper containers, Redis, or Celery workers.
@@ -1112,7 +1105,7 @@ Instead, the backend includes an admin-only manual refresh endpoint:
 
 ```txt
 POST /admin/scrape-once
-````
+```
 
 The endpoint is protected using the `X-Admin-Secret` header.
 
@@ -1135,13 +1128,13 @@ Remotive is the most reliable hosted refresh source for the deployed demo. Remot
 
 The manual refresh process:
 
-* inserts new jobs,
-* refreshes existing jobs using `source_url`,
-* updates `scraped_at` for existing jobs,
-* marks refreshed jobs as active,
-* avoids duplicate records,
-* extracts and links skills for new jobs,
-* and returns a source-wise refresh summary.
+- inserts new jobs,
+- refreshes existing jobs using `source_url`,
+- updates `scraped_at` for existing jobs,
+- marks refreshed jobs as active,
+- avoids duplicate records,
+- extracts and links skills for new jobs,
+- and returns a source-wise refresh summary.
 
 Example command-line refresh:
 
@@ -1162,27 +1155,7 @@ The admin UI defaults to Remotive as the recommended production source. Other so
 
 This design keeps the deployment lightweight while preserving the ability to refresh job data when needed.
 
-````
-
-## 2. In `Limitations`, update this line
-
-Replace:
-
-```md
-- The manual refresh endpoint currently supports Remotive, RemoteOK, and Arbeitnow.
-````
-
-with:
-
-```md
-- The manual refresh endpoint supports Remotive, RemoteOK, Arbeitnow, and all-source refresh, but Remotive is the recommended hosted production source.
-```
-
-Keep this line too:
-
-```md
-- Internshala scraping exists locally but is not part of the hosted manual refresh flow.
-```
+---
 
 ## Limitations
 
@@ -1193,7 +1166,7 @@ Keep this line too:
 - Frontend automated tests are not yet implemented.
 - Resume analysis depends on PDF text extraction quality.
 - Continuous worker/scraper deployment requires additional hosted services.
-- The manual refresh endpoint currently supports Remotive, RemoteOK, and Arbeitnow.
+- The manual refresh endpoint supports Remotive, RemoteOK, Arbeitnow, and all-source refresh, but Remotive is the recommended hosted production source.
 - Internshala scraping exists locally but is not part of the hosted manual refresh flow.
 - The app is designed for learning, portfolio, and demo purposes, not as a commercial job platform yet.
 
@@ -1210,7 +1183,7 @@ Planned improvements include:
 - Better scraper scheduling
 - Scraper health monitoring
 - Admin refresh history and logs
-- More sources for manual scrape refresh
+- More stable API-based sources for hosted refresh
 - Kanban-style application tracker
 - Email reminders for follow-ups
 - Interview date tracking
