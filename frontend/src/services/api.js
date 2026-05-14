@@ -117,4 +117,26 @@ export const updateSavedJob = (jobId, payload) =>
 export const getSavedJobStats = () =>
   API.get("/saved-jobs/stats");
 
+// ===============================
+// ADMIN
+// ===============================
+export const runManualScrape = ({
+  source = "all",
+  limit = 100,
+  adminSecret,
+}) =>
+  API.post(
+    "/admin/scrape-once",
+    null,
+    {
+      params: {
+        source,
+        limit,
+      },
+      headers: {
+        "X-Admin-Secret": adminSecret,
+      },
+    }
+  );
+
 export default API;

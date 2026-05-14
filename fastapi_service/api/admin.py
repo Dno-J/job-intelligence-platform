@@ -30,8 +30,8 @@ def verify_admin_secret(
 
 @router.post("/scrape-once")
 def scrape_once(
-    source: str = Query("arbeitnow"),
-    limit: int = Query(50, ge=1, le=100),
+    source: str = Query("remotive"),
+    limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
     _: None = Depends(verify_admin_secret),
 ):

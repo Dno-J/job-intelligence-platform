@@ -20,7 +20,7 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import SavedJobs from "./pages/SavedJobs";
 import RecommendedJobs from "./pages/RecommendedJobs";
-
+import AdminRefresh from "./pages/AdminRefresh";
 import PageWrapper from "./components/PageWrapper";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -115,6 +115,15 @@ function AnimatedRoutes() {
           element={
             <PageWrapper>
               <Register />
+            </PageWrapper>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <PageWrapper>
+              <AdminRefresh />
             </PageWrapper>
           }
         />
