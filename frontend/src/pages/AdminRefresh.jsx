@@ -3,7 +3,7 @@ import { runManualScrape } from "../services/api";
 
 function AdminRefresh() {
   const [adminSecret, setAdminSecret] = useState("");
-  const [source, setSource] = useState("all");
+  const [source, setSource] = useState("remotive");
   const [limit, setLimit] = useState(100);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -78,7 +78,8 @@ function AdminRefresh() {
                 className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500"
               />
               <p className="text-xs text-gray-500 mt-2">
-                This secret is configured only in the backend environment. Paste it here to run a manual refresh.
+                This value is not stored in the frontend. It is sent once as the
+                X-Admin-Secret header for this refresh request.
               </p>
             </div>
 
@@ -91,11 +92,15 @@ function AdminRefresh() {
                 onChange={(e) => setSource(e.target.value)}
                 className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500"
               >
-                <option value="all">All Sources</option>
-                <option value="remotive">Remotive</option>
-                <option value="remoteok">RemoteOK</option>
-                <option value="arbeitnow">Arbeitnow</option>
+                <option value="remotive">Remotive — Recommended</option>
+                <option value="all">All Sources — Experimental</option>
+                <option value="remoteok">RemoteOK — Experimental</option>
+                <option value="arbeitnow">Arbeitnow — Experimental</option>
               </select>
+              <p className="text-xs text-gray-500 mt-2">
+                Remotive is the stable hosted source. Other sources may be
+                blocked by external providers.
+              </p>
             </div>
 
             <div>

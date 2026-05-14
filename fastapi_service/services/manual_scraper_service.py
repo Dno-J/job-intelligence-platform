@@ -15,6 +15,18 @@ REMOTIVE_URL = "https://remotive.com/api/remote-jobs"
 REMOTEOK_URL = "https://remoteok.com/api"
 
 
+REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/122.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/json,text/plain,*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Connection": "keep-alive",
+}
+
+
 SKILL_ALIASES = {
     "js": "javascript",
     "node": "node.js",
@@ -33,19 +45,89 @@ SKILL_ALIASES = {
 
 
 SKILLS = [
-    "python", "java", "javascript", "typescript", "c++", "c#", "rust", "php",
-    "ruby", "swift", "kotlin", "dart", "html", "css", "tailwind", "bootstrap",
-    "react", "next.js", "vue", "angular", "redux", "node.js", "express",
-    "django", "fastapi", "flask", "spring", "spring boot", "rest api",
-    "graphql", "microservices", "sql", "postgresql", "mysql", "sqlite",
-    "mongodb", "redis", "elasticsearch", "sqlalchemy", "pandas", "numpy",
-    "aws", "azure", "gcp", "docker", "kubernetes", "terraform", "jenkins",
-    "github actions", "ci/cd", "nginx", "linux", "pytest", "selenium",
-    "playwright", "machine learning", "deep learning", "artificial intelligence",
-    "nlp", "llm", "langchain", "langgraph", "openai", "tensorflow", "pytorch",
-    "scikit-learn", "git", "github", "postman", "jira", "figma", "excel",
-    "power bi", "tableau", "android", "ios", "react native", "flutter",
-    "agile", "scrum", "data structures", "algorithms", "system design",
+    "python",
+    "java",
+    "javascript",
+    "typescript",
+    "c++",
+    "c#",
+    "rust",
+    "php",
+    "ruby",
+    "swift",
+    "kotlin",
+    "dart",
+    "html",
+    "css",
+    "tailwind",
+    "bootstrap",
+    "react",
+    "next.js",
+    "vue",
+    "angular",
+    "redux",
+    "node.js",
+    "express",
+    "django",
+    "fastapi",
+    "flask",
+    "spring",
+    "spring boot",
+    "rest api",
+    "graphql",
+    "microservices",
+    "sql",
+    "postgresql",
+    "mysql",
+    "sqlite",
+    "mongodb",
+    "redis",
+    "elasticsearch",
+    "sqlalchemy",
+    "pandas",
+    "numpy",
+    "aws",
+    "azure",
+    "gcp",
+    "docker",
+    "kubernetes",
+    "terraform",
+    "jenkins",
+    "github actions",
+    "ci/cd",
+    "nginx",
+    "linux",
+    "pytest",
+    "selenium",
+    "playwright",
+    "machine learning",
+    "deep learning",
+    "artificial intelligence",
+    "nlp",
+    "llm",
+    "langchain",
+    "langgraph",
+    "openai",
+    "tensorflow",
+    "pytorch",
+    "scikit-learn",
+    "git",
+    "github",
+    "postman",
+    "jira",
+    "figma",
+    "excel",
+    "power bi",
+    "tableau",
+    "android",
+    "ios",
+    "react native",
+    "flutter",
+    "agile",
+    "scrum",
+    "data structures",
+    "algorithms",
+    "system design",
 ]
 
 
@@ -53,26 +135,51 @@ CONTEXTUAL_SKILLS = {
     "go": {
         "final": "go",
         "contexts": [
-            "golang", "go developer", "go engineer", "go backend",
-            "go programming", "go language", "written in go", "experience with go",
+            "golang",
+            "go developer",
+            "go engineer",
+            "go backend",
+            "go programming",
+            "go language",
+            "written in go",
+            "experience with go",
         ],
     },
     "ai": {
         "final": "artificial intelligence",
         "contexts": [
-            "artificial intelligence", "ai engineer", "ai developer", "ai tools",
-            "ai systems", "ai models", "ai/ml", "generative ai",
+            "artificial intelligence",
+            "ai engineer",
+            "ai developer",
+            "ai tools",
+            "ai systems",
+            "ai models",
+            "ai/ml",
+            "generative ai",
         ],
     },
     "ml": {
         "final": "machine learning",
-        "contexts": ["machine learning", "ml engineer", "ml models", "ml pipelines", "ai/ml"],
+        "contexts": [
+            "machine learning",
+            "ml engineer",
+            "ml models",
+            "ml pipelines",
+            "ai/ml",
+        ],
     },
     "api": {
         "final": "api",
         "contexts": [
-            "rest api", "apis", "api development", "api integration", "api design",
-            "build apis", "building apis", "develop apis", "developing apis",
+            "rest api",
+            "apis",
+            "api development",
+            "api integration",
+            "api design",
+            "build apis",
+            "building apis",
+            "develop apis",
+            "developing apis",
         ],
     },
 }
@@ -135,6 +242,7 @@ def normalize_text(text: str) -> str:
 
 def normalize_skill(skill: str) -> str:
     skill = (skill or "").lower().strip()
+
     normalized = SKILL_ALIASES.get(skill, skill)
 
     if normalized == "cplusplus":
@@ -214,7 +322,11 @@ def extract_skills(text: str) -> List[str]:
 def get_or_create_company(db: Session, name: str) -> Company:
     company_name = clean_text(name, "Unknown")
 
-    company = db.query(Company).filter(Company.name == company_name).first()
+    company = (
+        db.query(Company)
+        .filter(Company.name == company_name)
+        .first()
+    )
 
     if company:
         return company
@@ -230,12 +342,19 @@ def get_or_create_company(db: Session, name: str) -> Company:
 def get_or_create_skill(db: Session, skill_name: str) -> Skill:
     normalized = normalize_skill(skill_name)
 
-    skill = db.query(Skill).filter(Skill.normalized_name == normalized).first()
+    skill = (
+        db.query(Skill)
+        .filter(Skill.normalized_name == normalized)
+        .first()
+    )
 
     if skill:
         return skill
 
-    skill = Skill(name=skill_name, normalized_name=normalized)
+    skill = Skill(
+        name=skill_name,
+        normalized_name=normalized,
+    )
 
     db.add(skill)
     db.flush()
@@ -246,14 +365,20 @@ def get_or_create_skill(db: Session, skill_name: str) -> Skill:
 def link_job_skill(db: Session, job_id, skill_id) -> bool:
     existing = (
         db.query(JobSkill)
-        .filter(JobSkill.job_id == job_id, JobSkill.skill_id == skill_id)
+        .filter(
+            JobSkill.job_id == job_id,
+            JobSkill.skill_id == skill_id,
+        )
         .first()
     )
 
     if existing:
         return False
 
-    job_skill = JobSkill(job_id=job_id, skill_id=skill_id)
+    job_skill = JobSkill(
+        job_id=job_id,
+        skill_id=skill_id,
+    )
 
     db.add(job_skill)
 
@@ -310,7 +435,11 @@ def create_job_with_skills(
             "skills_linked": 0,
         }
 
-    existing_job = db.query(Job).filter(Job.source_url == source_url).first()
+    existing_job = (
+        db.query(Job)
+        .filter(Job.source_url == source_url)
+        .first()
+    )
 
     if existing_job:
         refresh_existing_job(
@@ -332,7 +461,10 @@ def create_job_with_skills(
             "skills_linked": 0,
         }
 
-    company = get_or_create_company(db=db, name=company_name)
+    company = get_or_create_company(
+        db=db,
+        name=company_name,
+    )
 
     job = Job(
         title=title,
@@ -356,9 +488,16 @@ def create_job_with_skills(
     extracted_skills = extract_skills(f"{title} {description}")
 
     for skill_name in extracted_skills:
-        skill = get_or_create_skill(db=db, skill_name=skill_name)
+        skill = get_or_create_skill(
+            db=db,
+            skill_name=skill_name,
+        )
 
-        created_link = link_job_skill(db=db, job_id=job.id, skill_id=skill.id)
+        created_link = link_job_skill(
+            db=db,
+            job_id=job.id,
+            skill_id=skill.id,
+        )
 
         if created_link:
             skills_linked += 1
@@ -410,7 +549,10 @@ def parse_salary(value) -> tuple[Optional[int], Optional[int], str]:
     elif "$" in text or "usd" in text.lower():
         currency = "USD"
 
-    numbers = [int(num.replace(",", "")) for num in re.findall(r"\d[\d,]*", text)]
+    numbers = [
+        int(num.replace(",", ""))
+        for num in re.findall(r"\d[\d,]*", text)
+    ]
 
     if len(numbers) >= 2:
         return numbers[0], numbers[1], currency
@@ -425,7 +567,11 @@ def fetch_arbeitnow_jobs(limit: int = 50) -> List[Dict]:
     response = requests.get(
         ARBEITNOW_URL,
         timeout=20,
-        headers={"User-Agent": "JobIntel/1.0", "Accept": "application/json"},
+        headers={
+            **REQUEST_HEADERS,
+            "Referer": "https://www.arbeitnow.com/",
+            "Origin": "https://www.arbeitnow.com",
+        },
     )
     response.raise_for_status()
 
@@ -450,6 +596,10 @@ def scrape_arbeitnow_once(db: Session, limit: int = 50) -> Dict:
             description=clean_text(item.get("description")),
             source="arbeitnow",
             source_url=clean_text(item.get("url")),
+            job_type=None,
+            experience_level=None,
+            salary_min=None,
+            salary_max=None,
             currency="USD",
         )
 
@@ -464,7 +614,7 @@ def fetch_remotive_jobs(limit: int = 50) -> List[Dict]:
     response = requests.get(
         REMOTIVE_URL,
         timeout=20,
-        headers={"User-Agent": "JobIntel/1.0", "Accept": "application/json"},
+        headers=REQUEST_HEADERS,
     )
     response.raise_for_status()
 
@@ -485,7 +635,10 @@ def scrape_remotive_once(db: Session, limit: int = 50) -> Dict:
 
         title = clean_text(item.get("title"))
         company_name = clean_text(item.get("company_name"), "Unknown")
-        location = clean_text(item.get("candidate_required_location"), "Remote")
+        location = clean_text(
+            item.get("candidate_required_location"),
+            "Remote",
+        )
         description = clean_text(item.get("description"))
         source_url = clean_text(item.get("url"))
 
@@ -515,12 +668,17 @@ def fetch_remoteok_jobs(limit: int = 50) -> List[Dict]:
     response = requests.get(
         REMOTEOK_URL,
         timeout=20,
-        headers={"User-Agent": "JobIntel/1.0", "Accept": "application/json"},
+        headers={
+            **REQUEST_HEADERS,
+            "Referer": "https://remoteok.com/",
+            "Origin": "https://remoteok.com",
+        },
     )
     response.raise_for_status()
 
     data = response.json()
 
+    # RemoteOK returns a metadata object as the first list item.
     jobs = [
         item
         for item in data
@@ -632,7 +790,11 @@ def safe_scrape_source(db: Session, source: str, limit: int) -> Dict:
         }
 
 
-def manual_scrape_once(db: Session, source: str = "remotive", limit: int = 50) -> Dict:
+def manual_scrape_once(
+    db: Session,
+    source: str = "remotive",
+    limit: int = 50,
+) -> Dict:
     source = source.lower().strip()
 
     if source == "remotive":
