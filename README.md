@@ -61,7 +61,8 @@ The project was built to demonstrate full-stack engineering, backend architectur
 - [Why This Project Matters](#why-this-project-matters)
 - [Development Note](#development-note)
 - [Author](#author)
-- [License](#License)
+- [License](#license)
+
 ---
 
 ## Project Overview
@@ -243,11 +244,18 @@ The production demo is designed to remain lightweight by avoiding always-running
 
 ### 10. Admin-Only Manual Job Refresh
 
-JobIntel includes an admin-only manual scrape endpoint.
+JobIntel includes an admin-only manual scrape endpoint and a hidden admin refresh UI.
 
 This allows the project owner to refresh job data on demand without running scraper containers, Redis, or Celery workers continuously in the deployed demo.
 
-The manual refresh flow supports **Remotive** as the preferred hosted source and keeps **Arbeitnow** available as a secondary/local source.
+The manual refresh flow supports:
+
+- Remotive
+- RemoteOK
+- Arbeitnow
+- All sources together
+
+Existing jobs are refreshed using `source_url` instead of being duplicated. This updates `scraped_at`, keeps jobs active, and helps recent dashboard ranges stay populated.
 
 ---
 
@@ -299,10 +307,10 @@ React Frontend
 ### Lightweight Deployment Architecture
 
 ```txt
-Remotive API / Seeded Job Data
+Remotive / RemoteOK / Arbeitnow
         |
         v
-Admin-Only Manual Scrape Endpoint
+Admin-Only Manual Refresh Endpoint
         |
         v
 Neon PostgreSQL
@@ -427,7 +435,7 @@ Render Static Frontend
   Builds dashboard data, market skill insights, resume analysis, and skill gap results.
 
 - `fastapi_service/services/manual_scraper_service.py`  
-  Handles direct admin-triggered job scraping, deduplication, company creation, job insertion, skill extraction, and job-skill linking without requiring Celery or Redis. Supports Remotive and Arbeitnow.
+  Handles direct admin-triggered job scraping, deduplication, existing-job refreshes, company creation, job insertion, skill extraction, and job-skill linking without requiring Celery or Redis. Supports Remotive, RemoteOK, Arbeitnow, and all-source refresh.
 
 - `fastapi_service/models/`  
   Contains SQLAlchemy models for users, profiles, jobs, companies, skills, saved jobs, and cleanup logs.
@@ -481,10 +489,10 @@ Render Static Frontend
 ### Frontend — `frontend/src`
 
 - `frontend/src/App.jsx`  
-  Main router, protected routes, navbar, and app layout.
+  Main router, protected routes, navbar, hidden admin refresh route, and app layout.
 
 - `frontend/src/services/api.js`  
-  Central Axios API client with JWT token injection and API helper functions.
+  Central Axios API client with JWT token injection and API helper functions, including manual admin refresh.
 
 - `frontend/src/context/AuthContext.jsx`  
   Manages authenticated user state across the frontend.
@@ -512,6 +520,9 @@ Render Static Frontend
 
 - `frontend/src/pages/Tools.jsx`  
   Resume analyzer and skill gap tools page.
+
+- `frontend/src/pages/AdminRefresh.jsx`  
+  Hidden admin-only UI for manually refreshing jobs with an admin secret.
 
 - `frontend/src/components/SkillsChart.jsx`  
   Skill demand chart.
@@ -1098,27 +1109,45 @@ POST /admin/scrape-once
 
 The endpoint is protected using the `X-Admin-Secret` header.
 
-Example:
-
-```bash
-curl -X POST "https://job-intelligence-platform-cnbf.onrender.com/admin/scrape-once?source=remotive&limit=50" \
-  -H "X-Admin-Secret: your-admin-secret"
-```
-
 Supported manual scrape sources:
 
 ```txt
 source=remotive
+source=remoteok
 source=arbeitnow
+source=all
 ```
 
 Recommended production source:
 
 ```txt
-source=remotive
+source=all
 ```
 
-Remotive is preferred for hosted manual refresh because it works reliably from the deployed backend environment. Arbeitnow remains available as a secondary source but may block some hosted server requests.
+The manual refresh process:
+
+- inserts new jobs,
+- refreshes existing jobs using `source_url`,
+- updates `scraped_at` for existing jobs,
+- marks refreshed jobs as active,
+- avoids duplicate records,
+- extracts and links skills for new jobs,
+- and returns a source-wise refresh summary.
+
+Example command-line refresh:
+
+```bash
+curl -X POST "https://job-intelligence-platform-cnbf.onrender.com/admin/scrape-once?source=all&limit=100" \
+  -H "X-Admin-Secret: your-admin-secret"
+```
+
+A hidden frontend admin page is also available:
+
+```txt
+/admin
+```
+
+This page is not linked in the main navigation. It allows the project owner to paste the admin secret and trigger a controlled job refresh from the UI.
 
 This design keeps the deployment lightweight while preserving the ability to refresh job data when needed.
 
@@ -1133,7 +1162,8 @@ This design keeps the deployment lightweight while preserving the ability to ref
 - Frontend automated tests are not yet implemented.
 - Resume analysis depends on PDF text extraction quality.
 - Continuous worker/scraper deployment requires additional hosted services.
-- The manual refresh endpoint currently supports Remotive and Arbeitnow only.
+- The manual refresh endpoint currently supports Remotive, RemoteOK, and Arbeitnow.
+- Internshala scraping exists locally but is not part of the hosted manual refresh flow.
 - The app is designed for learning, portfolio, and demo purposes, not as a commercial job platform yet.
 
 ---
@@ -1148,7 +1178,7 @@ Planned improvements include:
 - End-to-end tests
 - Better scraper scheduling
 - Scraper health monitoring
-- Admin dashboard
+- Admin refresh history and logs
 - More sources for manual scrape refresh
 - Kanban-style application tracker
 - Email reminders for follow-ups
@@ -1186,6 +1216,7 @@ It includes:
 - Docker-based local development
 - automated backend API tests
 - admin-only manual job refresh for lightweight deployment
+- hidden admin refresh UI
 - hosted deployment with Render and Neon
 - and production-minded environment configuration
 

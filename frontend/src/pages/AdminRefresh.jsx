@@ -78,8 +78,7 @@ function AdminRefresh() {
                 className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500"
               />
               <p className="text-xs text-gray-500 mt-2">
-                This value is not stored in the frontend code. Paste it only
-                when you want to refresh jobs.
+                This secret is configured only in the backend environment. Paste it here to run a manual refresh.
               </p>
             </div>
 
