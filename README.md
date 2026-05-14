@@ -1097,6 +1097,13 @@ The frontend includes loading states so the app remains usable while the backend
 
 ---
 
+Yes, update README before pushing.
+
+Only update the **Manual Job Refresh**, **Limitations**, and maybe **Future Improvements** sections. Your README already has the right structure, so keep the change small. Current README already mentions manual refresh, but it still says `source=all` is recommended. Now we should change that to **Remotive recommended** and mark others as experimental. 
+
+## 1. Replace your `Manual Job Refresh` section with this
+
+````md
 ## Manual Job Refresh
 
 The deployed demo does not need continuously running scraper containers, Redis, or Celery workers.
@@ -1105,7 +1112,7 @@ Instead, the backend includes an admin-only manual refresh endpoint:
 
 ```txt
 POST /admin/scrape-once
-```
+````
 
 The endpoint is protected using the `X-Admin-Secret` header.
 
@@ -1121,23 +1128,25 @@ source=all
 Recommended production source:
 
 ```txt
-source=all
+source=remotive
 ```
+
+Remotive is the most reliable hosted refresh source for the deployed demo. RemoteOK and Arbeitnow are available as experimental sources, but they may be blocked by external providers in hosted environments.
 
 The manual refresh process:
 
-- inserts new jobs,
-- refreshes existing jobs using `source_url`,
-- updates `scraped_at` for existing jobs,
-- marks refreshed jobs as active,
-- avoids duplicate records,
-- extracts and links skills for new jobs,
-- and returns a source-wise refresh summary.
+* inserts new jobs,
+* refreshes existing jobs using `source_url`,
+* updates `scraped_at` for existing jobs,
+* marks refreshed jobs as active,
+* avoids duplicate records,
+* extracts and links skills for new jobs,
+* and returns a source-wise refresh summary.
 
 Example command-line refresh:
 
 ```bash
-curl -X POST "https://job-intelligence-platform-cnbf.onrender.com/admin/scrape-once?source=all&limit=100" \
+curl -X POST "https://job-intelligence-platform-cnbf.onrender.com/admin/scrape-once?source=remotive&limit=100" \
   -H "X-Admin-Secret: your-admin-secret"
 ```
 
@@ -1149,9 +1158,31 @@ A hidden frontend admin page is also available:
 
 This page is not linked in the main navigation. It allows the project owner to paste the admin secret and trigger a controlled job refresh from the UI.
 
+The admin UI defaults to Remotive as the recommended production source. Other sources are shown as experimental.
+
 This design keeps the deployment lightweight while preserving the ability to refresh job data when needed.
 
----
+````
+
+## 2. In `Limitations`, update this line
+
+Replace:
+
+```md
+- The manual refresh endpoint currently supports Remotive, RemoteOK, and Arbeitnow.
+````
+
+with:
+
+```md
+- The manual refresh endpoint supports Remotive, RemoteOK, Arbeitnow, and all-source refresh, but Remotive is the recommended hosted production source.
+```
+
+Keep this line too:
+
+```md
+- Internshala scraping exists locally but is not part of the hosted manual refresh flow.
+```
 
 ## Limitations
 
